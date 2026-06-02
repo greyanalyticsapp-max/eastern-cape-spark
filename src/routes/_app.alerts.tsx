@@ -34,13 +34,24 @@ function AlertsPage() {
         <p className="text-muted-foreground mt-1">Urgent leaks pinged to your phone within 24 hours.</p>
       </div>
 
-      <div className="grid md:grid-cols-[340px_1fr] gap-4 rounded-xl border border-border overflow-hidden bg-card min-h-[60dvh]">
+      {/* Edited by Copilot: Improved responsive grid layout for alerts
+          Reason: /alerts page failed responsiveness test on iPad (820x1180).
+          WhatsApp chats notifications panel + chat interface were not properly
+          stacked vertically, causing horizontal overflow on smaller viewports.
+          
+          Changes:
+          - Added responsive grid-cols configuration that stacks vertically on
+            mobile/tablet and only creates side-by-side layout on larger screens (lg)
+          - Improved overflow handling with proper breakpoint management
+          - Ensures menu/panel closure or proper stacking on narrower devices
+          - Supports iPad (820px) and mobile devices down to 320px width */}
+      <div className="grid md:grid-cols-[1fr] lg:grid-cols-[340px_1fr] gap-4 rounded-xl border border-border overflow-hidden bg-card min-h-[60dvh]">
         {/* List */}
-        <div className={cn("border-b md:border-b-0 md:border-r border-border bg-muted/20", selected ? "hidden md:block" : "block")}>
+        <div className={cn("border-b lg:border-b-0 lg:border-r border-border bg-muted/20", selected ? "hidden lg:block" : "block")}>
           <div className="p-3 border-b border-border bg-card">
             <h2 className="font-semibold text-sm">Chats ({alerts.length})</h2>
           </div>
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-border overflow-y-auto max-h-[50dvh] lg:max-h-none">
             {alerts.map((a) => (
               <li key={a.id}>
                 <button
@@ -49,9 +60,9 @@ function AlertsPage() {
                 >
                   <div className="size-10 rounded-full bg-whatsapp text-whatsapp-foreground grid place-items-center font-semibold shrink-0">G</div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-sm font-medium">Grey Analytics</span>
-                      <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(a.timestamp, { addSuffix: false })}</span>
+                    <div className="flex justify-between items-baseline gap-2">
+                      <span className="text-sm font-medium truncate">Grey Analytics</span>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">{formatDistanceToNow(a.timestamp, { addSuffix: false })}</span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <p className="text-xs text-muted-foreground truncate flex-1">{a.message}</p>
@@ -68,14 +79,14 @@ function AlertsPage() {
         {selected ? (
           <div className="flex flex-col" style={{ background: "color-mix(in oklab, var(--color-whatsapp) 6%, var(--color-background))" }}>
             <header className="flex items-center gap-3 p-3 border-b border-border bg-card">
-              <button className="md:hidden text-sm text-muted-foreground" onClick={() => setSelected(null)}>‹ Back</button>
+              <button className="lg:hidden text-sm text-muted-foreground" onClick={() => setSelected(null)}>‹ Back</button>
               <div className="size-9 rounded-full bg-whatsapp text-whatsapp-foreground grid place-items-center font-semibold">G</div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold">Grey Analytics</div>
                 <div className="text-xs text-muted-foreground">online · WhatsApp Business</div>
               </div>
-              <button aria-label="Voice call" className="p-2 hover:bg-muted rounded-full"><Phone className="size-4" /></button>
-              <button aria-label="Video call" className="p-2 hover:bg-muted rounded-full"><Video className="size-4" /></button>
+              <button aria-label="Voice call" className="p-2 hover:bg-muted rounded-full hidden sm:inline-flex"><Phone className="size-4" /></button>
+              <button aria-label="Video call" className="p-2 hover:bg-muted rounded-full hidden sm:inline-flex"><Video className="size-4" /></button>
               <button aria-label="More" className="p-2 hover:bg-muted rounded-full"><MoreVertical className="size-4" /></button>
             </header>
 
@@ -86,12 +97,12 @@ function AlertsPage() {
               {selected.thread.map((m, i) => (
                 <div key={i} className={cn("flex", m.from === "owner" ? "justify-end" : "justify-start")}>
                   <div className={cn(
-                    "max-w-[80%] sm:max-w-[65%] px-3 py-2 rounded-2xl text-sm shadow-sm relative",
+                    "max-w-[85%] sm:max-w-[70%] px-3 py-2 rounded-2xl text-sm shadow-sm relative",
                     m.from === "owner"
                       ? "bg-whatsapp text-whatsapp-foreground rounded-br-sm"
                       : "bg-card rounded-bl-sm",
                   )}>
-                    <p className="whitespace-pre-wrap">{m.text}</p>
+                    <p className="whitespace-pre-wrap break-words">{m.text}</p>
                     <span className={cn("text-[10px] mt-1 block text-right opacity-70", m.from === "owner" && "text-whatsapp-foreground/80")}>
                       {format(m.at, "HH:mm")} {m.from === "owner" && <CheckCheck className="size-3 inline ml-0.5" />}
                     </span>
@@ -100,7 +111,7 @@ function AlertsPage() {
               ))}
 
               <div className="flex justify-start">
-                <div className="max-w-[80%] sm:max-w-[65%] px-3 py-2 rounded-2xl rounded-bl-sm bg-card text-sm shadow-sm">
+                <div className="max-w-[85%] sm:max-w-[70%] px-3 py-2 rounded-2xl rounded-bl-sm bg-card text-sm shadow-sm">
                   <div className="text-xs font-semibold text-destructive mb-1">⚠️ {selected.leakType}</div>
                   <p className="text-2xl font-bold tabular-nums">{formatZAR(selected.amount)}</p>
                   <p className="text-xs text-muted-foreground mt-1">Tap "View report" in the app to see the full fix steps.</p>
@@ -115,13 +126,13 @@ function AlertsPage() {
                 className="flex-1 px-3 py-2 rounded-full bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 aria-label="Message"
               />
-              <button className="size-9 rounded-full bg-whatsapp text-whatsapp-foreground grid place-items-center" aria-label="Send">
+              <button className="size-9 rounded-full bg-whatsapp text-whatsapp-foreground grid place-items-center flex-shrink-0" aria-label="Send">
                 <Send className="size-4" />
               </button>
             </div>
           </div>
         ) : (
-          <div className="hidden md:grid place-items-center text-muted-foreground p-10 text-sm">Select an alert to read it.</div>
+          <div className="hidden lg:grid place-items-center text-muted-foreground p-10 text-sm">Select an alert to read it.</div>
         )}
       </div>
     </div>
