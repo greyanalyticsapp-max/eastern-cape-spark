@@ -1,9 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, FileText, Bell, Settings, LogOut, ShieldCheck, Lock, Menu, X } from "lucide-react";
+import { LayoutDashboard, Upload, Bell, Settings, LogOut, ShieldCheck, Lock, Menu, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useApp } from "@/context/AppContext";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const NAV = [
