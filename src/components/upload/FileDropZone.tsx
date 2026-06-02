@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { Upload as UploadIcon, FileText, X, CheckCircle2 } from "lucide-react";
+import { Upload as UploadIcon, FileText, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
