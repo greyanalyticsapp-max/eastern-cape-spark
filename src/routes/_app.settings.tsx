@@ -60,17 +60,22 @@ function SettingsPage() {
           <CardTitle>Integrations</CardTitle>
           <CardDescription>Connect your accounting tools so Grey Analytics can pull data automatically.</CardDescription>
         </CardHeader>
+        {/* Edited by Copilot: Improved mobile responsiveness for integrations list
+            Reason: Settings page integrations layout was too clustered on smaller
+            devices (Galaxy Z Fold 344px width). Changed from horizontal flex layout
+            to improved grid/block structure on mobile to better accommodate smaller
+            screens and prevent horizontal overflow. */}
         <CardContent className="divide-y divide-border">
           {integrations.map((it, idx) => (
-            <div key={it.name} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-              <div className="size-10 rounded-lg bg-muted grid place-items-center font-semibold text-xs">{it.name.slice(0, 2)}</div>
+            <div key={it.name} className="flex flex-col sm:flex-row sm:items-center gap-3 py-3 first:pt-0 last:pb-0">
+              <div className="size-10 rounded-lg bg-muted grid place-items-center font-semibold text-xs flex-shrink-0">{it.name.slice(0, 2)}</div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="font-medium text-sm">{it.name}</span>
                   {it.connected ? (
-                    <Badge className="bg-success text-success-foreground hover:bg-success gap-1 text-[10px]"><CheckCircle2 className="size-3" />Connected</Badge>
+                    <Badge className="bg-success text-success-foreground hover:bg-success gap-1 text-[10px] w-fit"><CheckCircle2 className="size-3" />Connected</Badge>
                   ) : (
-                    <Badge variant="outline" className="gap-1 text-[10px]"><AlertTriangle className="size-3" />Not connected</Badge>
+                    <Badge variant="outline" className="gap-1 text-[10px] w-fit"><AlertTriangle className="size-3" />Not connected</Badge>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{it.desc}</p>
@@ -81,6 +86,7 @@ function SettingsPage() {
               <Button
                 size="sm"
                 variant={it.connected ? "outline" : "default"}
+                className="w-full sm:w-auto"
                 onClick={() => {
                   setIntegrations((arr) => arr.map((x) => x.name === it.name ? { ...x, connected: !x.connected } : x));
                   toast.success(it.connected ? `${it.name} disconnected` : `${it.name} connected`);
@@ -99,12 +105,12 @@ function SettingsPage() {
           <CardDescription>Choose how Grey Analytics alerts you.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <Label htmlFor="wa-alerts">WhatsApp alerts for leaks over R2,000</Label>
               <p className="text-xs text-muted-foreground mt-1">Sent within 24 hours of detection.</p>
             </div>
-            <Switch id="wa-alerts" checked={notify} onCheckedChange={setNotify} />
+            <Switch id="wa-alerts" checked={notify} onCheckedChange={setNotify} className="flex-shrink-0" />
           </div>
         </CardContent>
       </Card>
@@ -112,7 +118,10 @@ function SettingsPage() {
       <Card className="border-destructive/40">
         <CardHeader>
           <CardTitle className="text-destructive">Danger zone</CardTitle>
-          <CardDescription>Delete your account and all data (POPIA — deleted within 30 days).</CardDescription>
+          {/* Edited by Copilot: Replaced em-dash (—) with space
+              Reason: Remove all em-dashes rendered on UI for consistent text
+              rendering across all device sizes and improved mobile responsiveness */}
+          <CardDescription>Delete your account and all data (POPIA deleted within 30 days).</CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="destructive" className="gap-2" onClick={() => {
