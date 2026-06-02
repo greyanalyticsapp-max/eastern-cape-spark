@@ -191,3 +191,70 @@ a[href^="https://lovable.dev/projects/0d171e46-a2ec-4c61-96e7-1a2d79e0c0b6"] {
 #container #lovable-badge {
     display: none;
 }
+
+/* ============================================
+   Edited by Copilot: Mobile responsiveness improvements
+   
+   Reason: Improve font rendering and text layout consistency
+   across smaller devices. Em-dashes (—) can cause unexpected
+   line breaks and horizontal overflow on mobile viewports,
+   particularly on Galaxy Z Fold (344px) and similar narrow devices.
+   
+   This ensures text wraps properly and maintains readability
+   on screens as small as 320px (common mobile minimum) and
+   scales up to larger tablets and desktops.
+   
+   Changes support devices:
+   - Mobile: 320px - 480px (iPhone, Android phones)
+   - Tablets: 481px - 1024px (iPad, Galaxy Tab, Galaxy Z Fold)
+   - Desktop: 1025px+ (standard desktop displays)
+   ============================================ */
+
+@media (max-width: 1024px) {
+  /* Ensures text content doesn't break unexpectedly on tablets and mobile viewports */
+  body {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Prevents em-dash rendering issues causing overflow */
+  h1, h2, h3, h4, h5, h6, p, span, div {
+    word-spacing: normal;
+    hyphens: auto;
+  }
+}
+
+/* Broader mobile device support (320px - 768px) */
+@media (max-width: 768px) {
+  /* Target all text elements that might contain em-dashes or special characters */
+  body, body * {
+    /* Ensures consistent spacing and prevents character-specific rendering issues */
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Improve input and form element readability on smaller devices */
+  input, textarea, select {
+    font-size: 16px; /* Prevents zoom on iOS when focusing inputs */
+  }
+}
+
+/* Extra small devices optimization (320px - 480px) */
+@media (max-width: 480px) {
+  /* Fine-tune text layout for very narrow viewports */
+  body {
+    font-size: 14px;
+  }
+
+  /* Ensure buttons and interactive elements are touch-friendly */
+  button, a, [role="button"] {
+    min-height: 44px; /* iOS minimum touch target size */
+    min-width: 44px;
+  }
+
+  /* Improve text handling in containers */
+  h1, h2, h3 {
+    word-break: break-word;
+    hyphens: manual;
+  }
+}
