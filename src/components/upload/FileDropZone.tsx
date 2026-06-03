@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export type SelectedFile = { name: string; size: number; type: string };
 
 interface Props {
-  onComplete: (files: SelectedFile[]) => void;
+  onComplete: (files: SelectedFile[], rawFiles: File[]) => void;
 }
 
 const STEPS = [
