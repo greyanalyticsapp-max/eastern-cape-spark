@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export type SelectedFile = { name: string; size: number; type: string };
 
 interface Props {
-  onComplete: (files: SelectedFile[]) => void;
+  onComplete: (files: SelectedFile[], rawFiles: File[]) => void;
 }
 
 const STEPS = [
@@ -31,7 +31,8 @@ export function FileDropZone({ onComplete }: Props) {
 
   const handleFiles = useCallback((fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
-    const list = Array.from(fileList).map((f) => ({ name: f.name, size: f.size, type: f.type }));
+    const raw = Array.from(fileList);
+    const list = raw.map((f) => ({ name: f.name, size: f.size, type: f.type }));
     setFiles(list);
     setStage("uploading");
     setProgress(0);
@@ -50,7 +51,7 @@ export function FileDropZone({ onComplete }: Props) {
           if (i >= STEPS.length) {
             clearInterval(stepTimer);
             setStage("done");
-            setTimeout(() => onComplete(list), 600);
+            setTimeout(() => onComplete(list, raw), 600);
           } else {
             setStepIdx(i);
           }

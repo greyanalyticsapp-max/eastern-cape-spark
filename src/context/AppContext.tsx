@@ -15,6 +15,8 @@ interface AppState {
   alerts: Alert[];
   addAlertsFromReport: (r: Report) => void;
   markAlertRead: (id: string) => void;
+  extractedTexts: Record<string, string>;
+  setExtractedText: (reportId: string, text: string) => void;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -25,6 +27,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [extractedTexts, setExtractedTexts] = useState<Record<string, string>>({});
 
   // Seed mock data when user logs in
   useEffect(() => {
@@ -52,6 +55,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setUploads([]);
       setReports([]);
       setAlerts([]);
+      setExtractedTexts({});
     },
     uploads,
     addUpload: (u) => setUploads((prev) => [u, ...prev]),
@@ -67,7 +71,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setAlerts((prev) => [...newAlerts, ...prev]);
     },
     markAlertRead: (id) => setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, read: true } : a))),
-  }), [user, role, uploads, reports, alerts]);
+    extractedTexts,
+    setExtractedText: (reportId, text) => setExtractedTexts((prev) => ({ ...prev, [reportId]: text })),
+  }), [user, role, uploads, reports, alerts, extractedTexts]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
