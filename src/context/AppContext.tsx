@@ -71,7 +71,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setAlerts((prev) => [...newAlerts, ...prev]);
     },
     markAlertRead: (id) => setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, read: true } : a))),
-  }), [user, role, uploads, reports, alerts]);
+    extractedTexts,
+    setExtractedText: (reportId, text) => setExtractedTexts((prev) => ({ ...prev, [reportId]: text })),
+  }), [user, role, uploads, reports, alerts, extractedTexts]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
