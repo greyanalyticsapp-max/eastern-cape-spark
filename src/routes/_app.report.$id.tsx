@@ -21,8 +21,9 @@ export const Route = createFileRoute("/_app/report/$id")({
 
 function ReportPage() {
   const { id } = Route.useParams();
-  const { reports, getReport } = useApp();
+  const { reports, getReport, extractedTexts } = useApp();
   const report = id === "latest" ? reports[0] : getReport(id);
+  const [inputOpen, setInputOpen] = useState(false);
   if (!report) {
     return (
       <div className="text-center py-20">
@@ -31,6 +32,8 @@ function ReportPage() {
       </div>
     );
   }
+  const extracted = extractedTexts[report.id];
+  const hasInput = !!extracted && extracted.trim().length > 0;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -40,12 +43,37 @@ function ReportPage() {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mt-1">{report.title}</h1>
           <p className="text-muted-foreground">{report.businessName} · Generated {new Date(report.generatedAt).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" })}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button variant="outline" size="sm" disabled={!hasInput} onClick={() => setInputOpen(true)}>
+                    <Eye className="size-4 mr-1.5" />View Input
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!hasInput && <TooltipContent>Extraction failed or no text available</TooltipContent>}
+            </Tooltip>
+          </TooltipProvider>
           <Button variant="outline" size="sm" onClick={() => toast.info("Demo: PDF export would download here.")}><Download className="size-4 mr-1.5" />PDF</Button>
           <Button variant="outline" size="sm" onClick={() => toast.info("Demo: share link copied.")}><Share2 className="size-4 mr-1.5" />Share</Button>
           <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="size-4 mr-1.5" />Print</Button>
         </div>
       </div>
+
+      <Dialog open={inputOpen} onOpenChange={setInputOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Extracted input text</DialogTitle>
+            <DialogDescription>Raw text Siphon Cypher pulled from your uploaded files.</DialogDescription>
+          </DialogHeader>
+          <pre className="text-xs bg-muted/40 border border-border rounded-md p-4 max-h-[60vh] overflow-auto whitespace-pre-wrap font-mono">
+            {extracted}
+          </pre>
+        </DialogContent>
+      </Dialog>
+
 
       <ExecutiveSummary report={report} />
 
