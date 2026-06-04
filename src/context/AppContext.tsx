@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { mockAlerts, mockReport, mockUploads, mockUser, type Alert, type MockUser, type Report, type Role, type Upload } from "@/lib/mock";
+import type { AgentId, AgentResult } from "@/lib/analysis/types";
 
 interface AppState {
   user: MockUser | null;
@@ -17,6 +18,10 @@ interface AppState {
   markAlertRead: (id: string) => void;
   extractedTexts: Record<string, string>;
   setExtractedText: (reportId: string, text: string) => void;
+  // Transmit Assessment — per-report, per-agent analysis results.
+  analyses: Record<string, Partial<Record<AgentId, AgentResult>>>;
+  setAgentResult: (reportId: string, agent: AgentId, result: AgentResult) => void;
+  clearAnalysis: (reportId: string) => void;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -28,6 +33,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [reports, setReports] = useState<Report[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [extractedTexts, setExtractedTexts] = useState<Record<string, string>>({});
+  const [analyses, setAnalyses] = useState<Record<string, Partial<Record<AgentId, AgentResult>>>>({});
+
 
   // Seed mock data when user logs in
   useEffect(() => {
