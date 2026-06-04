@@ -63,6 +63,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setReports([]);
       setAlerts([]);
       setExtractedTexts({});
+      setAnalyses({});
     },
     uploads,
     addUpload: (u) => setUploads((prev) => [u, ...prev]),
@@ -80,7 +81,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     markAlertRead: (id) => setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, read: true } : a))),
     extractedTexts,
     setExtractedText: (reportId, text) => setExtractedTexts((prev) => ({ ...prev, [reportId]: text })),
-  }), [user, role, uploads, reports, alerts, extractedTexts]);
+    analyses,
+    setAgentResult: (reportId, agent, result) =>
+      setAnalyses((prev) => ({ ...prev, [reportId]: { ...(prev[reportId] ?? {}), [agent]: result } })),
+    clearAnalysis: (reportId) =>
+      setAnalyses((prev) => {
+        const next = { ...prev };
+        delete next[reportId];
+        return next;
+      }),
+  }), [user, role, uploads, reports, alerts, extractedTexts, analyses]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
