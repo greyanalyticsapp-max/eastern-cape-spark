@@ -82,15 +82,35 @@ function coerceResult(agent: AgentId, model: string, parsed: unknown): AgentResu
 }
 
 async function callGroq(agent: AgentId, text: string): Promise<AgentResult> {
+  console.log(`[server.callGroq] Starting for agent: ${agent}`);
+  
   const meta = agentMeta(agent);
+  console.log(`[server.callGroq] Agent meta:`, { agent, model: meta.model, envKey: meta.envKey });
+  
   // Agent-specific key first, then a shared fallback (GROQ_API_KEY) so a
   // single key can power all four agents during early demos.
-  const key = process.env[meta.envKey] ?? process.env.GROQ_API_KEY;
-  if (!key) return mockAgentResult(agent, text);
+  const agentSpecificKey = process.env[meta.envKey];
+  const fallbackKey = process.env.GROQ_API_KEY;
+  const key = agentSpecificKey ?? fallbackKey;
+  
+  console.log(`[server.callGroq] API key check:`, {
+    agent,
+    hasAgentSpecificKey: !!agentSpecificKey,
+    hasFallbackKey: !!fallbackKey,
+    usingKey: !!key,
+  });
+  
+  if (!key) {
+    console.log(`[server.callGroq] No API key found, returning mock result for ${agent}`);
+    return mockAgentResult(agent, text);
+  }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  
   try {
+    console.log(`[server.callGroq] Calling Groq API for ${agent}...`);
+    
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -110,16 +130,51 @@ async function callGroq(agent: AgentId, text: string): Promise<AgentResult> {
         ],
       }),
     });
+    
+    console.log(`[server.callGroq] Groq API response for ${agent}:`, {
+      status: res.status,
+      ok: res.ok,
+      contentType: res.headers.get("content-type"),
+    });
+    
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`Groq ${res.status}: ${body.slice(0, 200)}`);
+      const errorMsg = `Groq ${res.status}: ${body.slice(0, 200)}`;
+      console.error(`[server.callGroq] Groq API error for ${agent}:`, errorMsg);
+      throw new Error(errorMsg);
     }
+    
     const data = (await res.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
     };
+    
+    console.log(`[server.callGroq] Groq response parsed for ${agent}:`, {
+      hasChoices: !!data.choices,
+      choicesLength: data.choices?.length ?? 0,
+    });
+    
     const content = data.choices?.[0]?.message?.content ?? "";
+    console.log(`[server.callGroq] Content length for ${agent}:`, content.length);
+    
     const parsed = safeParseJson(content);
-    return coerceResult(agent, meta.model, parsed);
+    console.log(`[server.callGroq] Successfully parsed JSON for ${agent}`);
+    
+    const result = coerceResult(agent, meta.model, parsed);
+    console.log(`[server.callGroq] Coerced result for ${agent}:`, {
+      mocked: result.mocked,
+      anomalies: result.anomalies.length,
+      insights: result.insights.length,
+      confidence: result.confidence,
+    });
+    
+    return result;
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[server.callGroq] Exception caught for ${agent}:`, {
+      error: errorMsg,
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    throw err;
   } finally {
     clearTimeout(timer);
   }
@@ -129,22 +184,46 @@ export const Route = createFileRoute("/api/analyze")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        console.log(`[api.analyze] POST request started`);
+        
         let body: { agent?: unknown; text?: unknown };
         try {
           body = (await request.json()) as typeof body;
-        } catch {
+          console.log(`[api.analyze] Request body parsed:`, {
+            agent: body.agent,
+            textLength: typeof body.text === "string" ? body.text.length : "not a string",
+          });
+        } catch (err) {
+          console.error(`[api.analyze] Failed to parse request body:`, err);
           return json({ success: false, error: "Invalid JSON body" }, 400);
         }
+        
         const { agent, text } = body;
-        if (!isAgentId(agent)) return json({ success: false, error: "Unknown agent" }, 400);
+        
+        if (!isAgentId(agent)) {
+          console.warn(`[api.analyze] Invalid agent ID:`, agent);
+          return json({ success: false, error: "Unknown agent" }, 400);
+        }
+        
         if (typeof text !== "string" || text.trim().length < 10) {
+          console.warn(`[api.analyze] Invalid text for agent ${agent}:`, {
+            isString: typeof text === "string",
+            length: typeof text === "string" ? text.length : 0,
+          });
           return json({ success: false, error: "Text input too short to analyse" }, 400);
         }
+        
         try {
+          console.log(`[api.analyze] Calling Groq for agent: ${agent}`);
           const result = await callGroq(agent, text);
+          console.log(`[api.analyze] Successfully got result for ${agent}`);
           return json({ success: true, result });
         } catch (err) {
           const msg = err instanceof Error ? err.message : "Agent failed";
+          console.error(`[api.analyze] Error calling Groq for ${agent}:`, {
+            error: msg,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
           return json({ success: false, error: msg }, 502);
         }
       },
