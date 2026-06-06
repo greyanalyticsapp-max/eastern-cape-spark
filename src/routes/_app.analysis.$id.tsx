@@ -37,11 +37,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { triggerAlerts } from "@/lib/alerts/client";
 
 export const Route = createFileRoute("/_app/analysis/$id")({
   head: () => ({ meta: [{ title: "Transmit Assessment · Grey Analytics" }] }),
   component: AnalysisPage,
 });
+
+
 
 type AgentStatus = "idle" | "running" | "done" | "error";
 interface AgentState {
