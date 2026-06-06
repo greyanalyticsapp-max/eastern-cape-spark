@@ -64,12 +64,17 @@ const SEVERITY_BADGE: Record<"high" | "medium" | "low", string> = {
 function AnalysisPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { extractedTexts, analyses, setAgentResult, reports, getReport } = useApp();
+  const { extractedTexts, analyses, setAgentResult, reports, getReport, user } = useApp();
   const report = id === "latest" ? reports[0] : getReport(id);
   const reportId = report?.id ?? id;
   const text = extractedTexts[reportId] ?? "";
   const cached = analyses[reportId] ?? {};
   const [inputOpen, setInputOpen] = useState(false);
+  // Track whether we already fired the post-analysis alert pipeline for
+  // this report so refreshing the page (or retrying one agent) does not
+  // re-trigger duplicate WhatsApp / Email sends.
+  const alertsFiredRef = useRef(false);
+
 
   const [state, setState] = useState<Record<AgentId, AgentState>>(() => ({
     finance: { status: cached.finance ? "done" : "idle" },
