@@ -1,26 +1,51 @@
 // Transmit Assessment — server route.
 //
 // One agent per request so the browser can fan out 4 parallel calls and
-// stream per-agent status into the UI (instead of waiting for the slowest
-// of four to finish on a single response).
+// stream per-agent status into the UI.
 //
-// Real path: Groq Chat Completions API
-//   POST https://api.groq.com/openai/v1/chat/completions
-//   Authorization: Bearer <GROQ_xxx_KEY>
-// Each agent has its own env var key (per spec) so a missing one degrades
-// only that agent — the others still run live.
+// TPM mitigation (added for Task 1):
+//   - Per-model token budgets (free-tier TPM ceilings vary 6k–8k).
+//   - Local summariser pre-shrinks the user text into the budget BEFORE
+//     calling Groq, so we never trip a 413 / rate-limit error on the
+//     first attempt.
+//   - On a 413 or 429 response we retry with exponential backoff
+//     (1s, 2s, 4s — max 3 attempts) and further halve the text budget
+//     each retry as a safety net.
+//   - On final failure we return a structured `analysis_failed: true`
+//     payload so the UI can mark that single agent as failed and offer
+//     a retry without breaking the rest of the pipeline.
 //
-// Fallback path: if the env var for an agent is absent, we return a
-// realistic mock AgentResult (see src/lib/analysis/mock.ts). This keeps
-// the demo functional before keys are wired.
+// The agent prompts, analysis structure, and user flow are unchanged.
 
 import { createFileRoute } from "@tanstack/react-router";
 import { agentMeta, type AgentId, type AgentResult } from "@/lib/analysis/types";
 import { PROMPTS } from "@/lib/analysis/prompts";
 import { mockAgentResult } from "@/lib/analysis/mock";
+import { summariseForAgent, tokensToChars } from "@/lib/analysis/summarise";
 
 const TIMEOUT_MS = 60_000;
-const MAX_INPUT_CHARS = 60_000; // safety cap before token limits
+const MAX_ATTEMPTS = 3;
+const BACKOFF_MS = [1000, 2000, 4000];
+
+// Per-agent TPM ceilings (tokens per minute on Groq free tier as reported
+// by the live errors). We reserve ~1700 tokens for the system prompt and
+// response (max_tokens), then convert the remainder to a char budget.
+const TPM_BUDGET: Record<AgentId, number> = {
+  finance: 8000,     // openai/gpt-oss-120b
+  operations: 8000,  // openai/gpt-oss-20b
+  compliance: 6000,  // llama-3.3-70b-versatile (conservative)
+  strategy: 6000,    // llama-3.1-8b-instant
+};
+const RESERVED_TOKENS = 1700;
+const MAX_COMPLETION_TOKENS = 1200;
+
+function userCharBudget(agent: AgentId, attempt: number): number {
+  const baseTokens = Math.max(800, TPM_BUDGET[agent] - RESERVED_TOKENS);
+  // Halve the budget on each retry to defensively shrink under any
+  // rate-limit / size error we keep hitting.
+  const shrunk = Math.floor(baseTokens / Math.pow(2, attempt));
+  return tokensToChars(shrunk);
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -34,24 +59,10 @@ function isAgentId(x: unknown): x is AgentId {
 }
 
 function safeParseJson(raw: string): unknown {
-  // Models occasionally wrap JSON in ```json fences despite instructions.
-  const cleaned = raw
-    .trim()
-    .replace(/^```(?:json)?/i, "")
-    .replace(/```$/i, "")
-    .trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    // Extract the first balanced {...} block as a last resort.
+  const cleaned = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+  try { return JSON.parse(cleaned); } catch {
     const m = cleaned.match(/\{[\s\S]*\}/);
-    if (m) {
-      try {
-        return JSON.parse(m[0]);
-      } catch {
-        /* fall through */
-      }
-    }
+    if (m) { try { return JSON.parse(m[0]); } catch { /* fall through */ } }
     throw new Error("Agent did not return valid JSON");
   }
 }
@@ -62,9 +73,7 @@ function coerceResult(agent: AgentId, model: string, parsed: unknown): AgentResu
   const insightsRaw = Array.isArray(obj.insights) ? obj.insights : [];
   const conf = typeof obj.confidence === "number" ? obj.confidence : 0.5;
   return {
-    agent,
-    model,
-    mocked: false,
+    agent, model, mocked: false,
     confidence: Math.max(0, Math.min(1, conf)),
     insights: insightsRaw.slice(0, 5).map((s) => String(s)),
     anomalies: anomaliesRaw.slice(0, 6).map((a) => {
@@ -81,150 +90,113 @@ function coerceResult(agent: AgentId, model: string, parsed: unknown): AgentResu
   };
 }
 
-async function callGroq(agent: AgentId, text: string): Promise<AgentResult> {
-  console.log(`[server.callGroq] Starting for agent: ${agent}`);
-  
-  const meta = agentMeta(agent);
-  console.log(`[server.callGroq] Agent meta:`, { agent, model: meta.model, envKey: meta.envKey });
-  
-  // Agent-specific key first, then a shared fallback (GROQ_API_KEY) so a
-  // single key can power all four agents during early demos.
-  const agentSpecificKey = process.env[meta.envKey];
-  const fallbackKey = process.env.GROQ_API_KEY;
-  const key = agentSpecificKey ?? fallbackKey;
-  
-  console.log(`[server.callGroq] API key check:`, {
-    agent,
-    hasAgentSpecificKey: !!agentSpecificKey,
-    hasFallbackKey: !!fallbackKey,
-    usingKey: !!key,
-  });
-  
-  if (!key) {
-    console.log(`[server.callGroq] No API key found, returning mock result for ${agent}`);
-    return mockAgentResult(agent, text);
-  }
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+async function callGroqOnce(
+  agent: AgentId,
+  model: string,
+  apiKey: string,
+  userText: string,
+): Promise<{ ok: true; result: AgentResult } | { ok: false; status: number; body: string }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  
   try {
-    console.log(`[server.callGroq] Calling Groq API for ${agent}...`);
-    
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       signal: controller.signal,
       body: JSON.stringify({
-        model: meta.model,
-        // response_format json_object is supported on Groq for these models
-        // and dramatically improves parse reliability.
+        model,
         response_format: { type: "json_object" },
         temperature: 0.2,
+        max_tokens: MAX_COMPLETION_TOKENS,
         messages: [
           { role: "system", content: PROMPTS[agent] },
-          { role: "user", content: text.slice(0, MAX_INPUT_CHARS) },
+          { role: "user", content: userText },
         ],
       }),
     });
-    
-    console.log(`[server.callGroq] Groq API response for ${agent}:`, {
-      status: res.status,
-      ok: res.ok,
-      contentType: res.headers.get("content-type"),
-    });
-    
     if (!res.ok) {
       const body = await res.text();
-      const errorMsg = `Groq ${res.status}: ${body.slice(0, 200)}`;
-      console.error(`[server.callGroq] Groq API error for ${agent}:`, errorMsg);
-      throw new Error(errorMsg);
+      return { ok: false, status: res.status, body: body.slice(0, 400) };
     }
-    
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    
-    console.log(`[server.callGroq] Groq response parsed for ${agent}:`, {
-      hasChoices: !!data.choices,
-      choicesLength: data.choices?.length ?? 0,
-    });
-    
+    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const content = data.choices?.[0]?.message?.content ?? "";
-    console.log(`[server.callGroq] Content length for ${agent}:`, content.length);
-    
     const parsed = safeParseJson(content);
-    console.log(`[server.callGroq] Successfully parsed JSON for ${agent}`);
-    
-    const result = coerceResult(agent, meta.model, parsed);
-    console.log(`[server.callGroq] Coerced result for ${agent}:`, {
-      mocked: result.mocked,
-      anomalies: result.anomalies.length,
-      insights: result.insights.length,
-      confidence: result.confidence,
-    });
-    
-    return result;
-  } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    console.error(`[server.callGroq] Exception caught for ${agent}:`, {
-      error: errorMsg,
-      stack: err instanceof Error ? err.stack : undefined,
-    });
-    throw err;
+    return { ok: true, result: coerceResult(agent, model, parsed) };
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function callGroq(agent: AgentId, text: string): Promise<AgentResult> {
+  const meta = agentMeta(agent);
+  const key = process.env[meta.envKey] ?? process.env.GROQ_API_KEY;
+  if (!key) {
+    console.log(`[analyze] No API key for ${agent}; returning mock`);
+    return mockAgentResult(agent, text);
+  }
+
+  let lastErr = "Agent failed";
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const budget = userCharBudget(agent, attempt);
+    const { text: payloadText, reduced } = summariseForAgent(text, budget);
+    console.log(`[analyze] ${agent} attempt ${attempt + 1}/${MAX_ATTEMPTS} budget=${budget}ch reduced=${reduced}`);
+    try {
+      const out = await callGroqOnce(agent, meta.model, key, payloadText);
+      if (out.ok) return out.result;
+
+      // Rate-limit / payload-too-large → back off and shrink further.
+      if (out.status === 413 || out.status === 429) {
+        lastErr = `Groq ${out.status}: ${out.body.slice(0, 160)}`;
+        console.warn(`[analyze] ${agent} ${out.status}; backing off ${BACKOFF_MS[attempt]}ms`);
+        if (attempt < MAX_ATTEMPTS - 1) await sleep(BACKOFF_MS[attempt]);
+        continue;
+      }
+      // Non-retryable HTTP error.
+      throw new Error(`Groq ${out.status}: ${out.body}`);
+    } catch (err) {
+      lastErr = err instanceof Error ? err.message : String(err);
+      // Network / parse errors get one retry too.
+      if (attempt < MAX_ATTEMPTS - 1) {
+        await sleep(BACKOFF_MS[attempt]);
+        continue;
+      }
+    }
+  }
+  throw new Error(lastErr);
 }
 
 export const Route = createFileRoute("/api/analyze")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        console.log(`[api.analyze] POST request started`);
-        
         let body: { agent?: unknown; text?: unknown };
-        try {
-          body = (await request.json()) as typeof body;
-          console.log(`[api.analyze] Request body parsed:`, {
-            agent: body.agent,
-            textLength: typeof body.text === "string" ? body.text.length : "not a string",
-          });
-        } catch (err) {
-          console.error(`[api.analyze] Failed to parse request body:`, err);
-          return json({ success: false, error: "Invalid JSON body" }, 400);
-        }
-        
+        try { body = (await request.json()) as typeof body; }
+        catch { return json({ success: false, error: "Invalid JSON body" }, 400); }
+
         const { agent, text } = body;
-        
-        if (!isAgentId(agent)) {
-          console.warn(`[api.analyze] Invalid agent ID:`, agent);
-          return json({ success: false, error: "Unknown agent" }, 400);
-        }
-        
+        if (!isAgentId(agent)) return json({ success: false, error: "Unknown agent" }, 400);
         if (typeof text !== "string" || text.trim().length < 10) {
-          console.warn(`[api.analyze] Invalid text for agent ${agent}:`, {
-            isString: typeof text === "string",
-            length: typeof text === "string" ? text.length : 0,
-          });
           return json({ success: false, error: "Text input too short to analyse" }, 400);
         }
-        
+
         try {
-          console.log(`[api.analyze] Calling Groq for agent: ${agent}`);
           const result = await callGroq(agent, text);
-          console.log(`[api.analyze] Successfully got result for ${agent}`);
           return json({ success: true, result });
         } catch (err) {
           const msg = err instanceof Error ? err.message : "Agent failed";
-          console.error(`[api.analyze] Error calling Groq for ${agent}:`, {
-            error: msg,
-            stack: err instanceof Error ? err.stack : undefined,
-          });
-          return json({ success: false, error: msg }, 502);
+          console.error(`[analyze] ${agent} final failure:`, msg);
+          // Graceful structured failure — does NOT 500 the request so the
+          // browser's per-agent UI can mark this one failed without crashing
+          // the parallel batch.
+          return json({
+            success: false,
+            analysis_failed: true,
+            agent,
+            error: "We couldn't complete this agent's analysis. You can retry just this agent.",
+            detail: msg,
+          }, 200);
         }
       },
     },
