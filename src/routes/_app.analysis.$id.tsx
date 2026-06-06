@@ -37,11 +37,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { triggerAlerts } from "@/lib/alerts/client";
 
 export const Route = createFileRoute("/_app/analysis/$id")({
   head: () => ({ meta: [{ title: "Transmit Assessment · Grey Analytics" }] }),
   component: AnalysisPage,
 });
+
+
 
 type AgentStatus = "idle" | "running" | "done" | "error";
 interface AgentState {
@@ -60,12 +64,17 @@ const SEVERITY_BADGE: Record<"high" | "medium" | "low", string> = {
 function AnalysisPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { extractedTexts, analyses, setAgentResult, reports, getReport } = useApp();
+  const { extractedTexts, analyses, setAgentResult, reports, getReport, user } = useApp();
   const report = id === "latest" ? reports[0] : getReport(id);
   const reportId = report?.id ?? id;
   const text = extractedTexts[reportId] ?? "";
   const cached = analyses[reportId] ?? {};
   const [inputOpen, setInputOpen] = useState(false);
+  // Track whether we already fired the post-analysis alert pipeline for
+  // this report so refreshing the page (or retrying one agent) does not
+  // re-trigger duplicate WhatsApp / Email sends.
+  const alertsFiredRef = useRef(false);
+
 
   const [state, setState] = useState<Record<AgentId, AgentState>>(() => ({
     finance: { status: cached.finance ? "done" : "idle" },
@@ -105,7 +114,43 @@ function AnalysisPage() {
     () => AGENTS.filter((a) => state[a.id].status === "done").length,
     [state],
   );
+  const finishedCount = useMemo(
+    () => AGENTS.filter((a) => state[a.id].status === "done" || state[a.id].status === "error").length,
+    [state],
+  );
   const progress = Math.round((doneCount / AGENTS.length) * 100);
+
+  // Fire WhatsApp + Email alerts once ALL agents finish (success or error),
+  // independent of audit-report generation, per spec. Same lifecycle as the
+  // "Generate Report" button.
+  useEffect(() => {
+    if (alertsFiredRef.current) return;
+    if (finishedCount < AGENTS.length) return;
+    const haveAny = AGENTS.some((a) => analyses[reportId]?.[a.id]);
+    if (!haveAny) return;
+    alertsFiredRef.current = true;
+    void (async () => {
+      const outcome = await triggerAlerts({
+        reportId,
+        businessName: report?.businessName ?? "Your business",
+        whatsappTo: user?.whatsapp,
+        emailTo: user?.email,
+        analyses: analyses[reportId] ?? {},
+      });
+      if (!outcome.triggered) return;
+      if (outcome.error) { toast.error("Alert failed — check settings"); return; }
+      const sent = outcome.persisted.filter((r) => r.status === "sent");
+      const failed = outcome.persisted.filter((r) => r.status === "failed");
+      if (sent.length && !failed.length) {
+        toast.success(`Alert sent via ${sent.map((s) => s.channel === "whatsapp" ? "WhatsApp" : "Email").join(" & ")}`);
+      } else if (sent.length) {
+        toast(`Alert sent via ${sent.map((s) => s.channel).join(", ")}; ${failed.length} failed`);
+      } else {
+        toast.error("Alert failed — check settings");
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finishedCount]);
 
   if (!report) {
     return (
