@@ -18,7 +18,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const unread = alerts.filter((a) => !a.read).length;
 
-  const handleLogout = () => { logout(); navigate({ to: "/login" }); };
+  // logout is now async (real Supabase sign-out). Await before navigating.
+  const handleLogout = async () => { await logout(); navigate({ to: "/login" }); };
 
   return (
     <div className="min-h-dvh flex bg-background text-foreground">
