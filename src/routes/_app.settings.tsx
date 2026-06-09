@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -7,18 +7,30 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, AlertTriangle, Trash2 } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  listConnections,
+  startConnect,
+  disconnect,
+  type ConnectionStatus,
+} from "@/lib/accounting/client";
+import type { AccountingProvider } from "@/services/accounting/types";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings · Grey Analytics" }] }),
   component: SettingsPage,
 });
 
-const INTEGRATIONS = [
-  { name: "Xero", desc: "Sync transactions every 6 hours", connected: true },
-  { name: "QuickBooks", desc: "Sync transactions daily", connected: false },
-  { name: "Sage", desc: "Sync transactions daily", connected: true },
+// Static metadata for providers we render in the Integrations card. The
+// `connected` flag is hydrated from /api/accounting/status at mount.
+const ACCOUNTING_META: Array<{ id: AccountingProvider; name: string; desc: string }> = [
+  { id: "xero", name: "Xero", desc: "OAuth 2.0 · syncs bank transactions" },
+  { id: "quickbooks", name: "QuickBooks", desc: "Intuit OAuth · syncs purchases" },
+  { id: "sage", name: "Sage", desc: "Sage Business Cloud · syncs bank transactions" },
+];
+
+const EXTRA_INTEGRATIONS = [
   { name: "Bank Statement (PDF)", desc: "Upload manually", connected: true },
   { name: "WhatsApp Business", desc: "Receive alerts and send invoices", connected: true },
 ];
@@ -30,7 +42,48 @@ function SettingsPage() {
   const [name, setName] = useState(user?.name ?? "");
   const [biz, setBiz] = useState(user?.businessName ?? "");
   const [notify, setNotify] = useState(true);
-  const [integrations, setIntegrations] = useState(INTEGRATIONS);
+  const [acct, setAcct] = useState<ConnectionStatus[]>([]);
+  const [loadingAcct, setLoadingAcct] = useState(true);
+  const [busy, setBusy] = useState<AccountingProvider | null>(null);
+
+  // Hydrate accounting connection status + surface OAuth callback results.
+  useEffect(() => {
+    listConnections()
+      .then(setAcct)
+      .catch((err) => console.warn("[settings] listConnections failed:", err))
+      .finally(() => setLoadingAcct(false));
+
+    const params = new URLSearchParams(window.location.search);
+    const integ = params.get("integration");
+    const status = params.get("status");
+    const err = params.get("error");
+    if (integ && status === "connected") toast.success(`${integ} connected`);
+    if (integ && err) toast.error(`${integ}: ${err}`);
+    if (integ) window.history.replaceState({}, "", window.location.pathname);
+  }, []);
+
+  function statusFor(id: AccountingProvider) {
+    return acct.find((c) => c.provider === id);
+  }
+
+  async function handleConnect(p: AccountingProvider) {
+    setBusy(p);
+    try { await startConnect(p); } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to start OAuth");
+      setBusy(null);
+    }
+  }
+  async function handleDisconnect(p: AccountingProvider) {
+    setBusy(p);
+    try {
+      await disconnect(p);
+      setAcct((arr) => arr.map((c) => c.provider === p ? { ...c, connected: false } : c));
+      toast.success(`${p} disconnected`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Disconnect failed");
+    } finally { setBusy(null); }
+  }
+
 
   return (
     <div className="max-w-3xl space-y-6">
