@@ -13,8 +13,14 @@ import { getAccountingService, type AccountingProvider } from "@/services/accoun
 const PROVIDERS = new Set<AccountingProvider>(["xero", "quickbooks", "sage"]);
 
 async function userIdFromRequest(request: Request): Promise<string | null> {
+  // Prefer Authorization header; fall back to ?token=... for top-level
+  // browser redirects that cannot set headers.
   const auth = request.headers.get("authorization");
-  const token = auth?.startsWith("Bearer ") ? auth.slice(7) : undefined;
+  let token = auth?.startsWith("Bearer ") ? auth.slice(7) : undefined;
+  if (!token) {
+    const url = new URL(request.url);
+    token = url.searchParams.get("token") ?? undefined;
+  }
   if (!token) return null;
   const { data, error } = await supabaseAdmin.auth.getUser(token);
   if (error || !data.user) return null;
