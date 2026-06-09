@@ -4,6 +4,7 @@
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getAccountingService } from "@/services/accounting";
+import type { Json } from "@/integrations/supabase/types";
 import type {
   AccountingProvider,
   AccountingTokens,
@@ -24,7 +25,7 @@ export async function saveTokens(
         refresh_token: tokens.refreshToken,
         expires_at: new Date(tokens.expiresAt).toISOString(),
         external_id: tokens.externalId ?? null,
-        metadata: tokens.metadata ?? {},
+        metadata: (tokens.metadata ?? {}) as unknown as Json,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id,provider" },
