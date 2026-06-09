@@ -119,38 +119,56 @@ function SettingsPage() {
             to improved grid/block structure on mobile to better accommodate smaller
             screens and prevent horizontal overflow. */}
         <CardContent className="divide-y divide-border">
-          {integrations.map((it, idx) => (
-            <div key={it.name} className="flex flex-col sm:flex-row sm:items-center gap-3 py-3 first:pt-0 last:pb-0">
+          {ACCOUNTING_META.map((it) => {
+            const s = statusFor(it.id);
+            const connected = Boolean(s?.connected);
+            const isBusy = busy === it.id;
+            return (
+              <div key={it.id} className="flex flex-col sm:flex-row sm:items-center gap-3 py-3 first:pt-0 last:pb-0">
+                <div className="size-10 rounded-lg bg-muted grid place-items-center font-semibold text-xs flex-shrink-0">{it.name.slice(0, 2)}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <span className="font-medium text-sm">{it.name}</span>
+                    {loadingAcct ? (
+                      <Badge variant="outline" className="gap-1 text-[10px] w-fit"><Loader2 className="size-3 animate-spin" />Checking</Badge>
+                    ) : connected ? (
+                      <Badge className="bg-success text-success-foreground hover:bg-success gap-1 text-[10px] w-fit"><CheckCircle2 className="size-3" />Connected</Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1 text-[10px] w-fit"><AlertTriangle className="size-3" />Not connected</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{it.desc}</p>
+                  {role === "accountant" && connected && s?.expiresAt && (
+                    <p className="text-[10px] text-muted-foreground mt-1">Token expires: {new Date(s.expiresAt).toLocaleString("en-ZA")}</p>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant={connected ? "outline" : "default"}
+                  className="w-full sm:w-auto"
+                  disabled={isBusy}
+                  onClick={() => connected ? handleDisconnect(it.id) : handleConnect(it.id)}
+                >
+                  {isBusy ? <Loader2 className="size-3.5 animate-spin" /> : connected ? "Disconnect" : "Connect"}
+                </Button>
+              </div>
+            );
+          })}
+          {EXTRA_INTEGRATIONS.map((it) => (
+            <div key={it.name} className="flex flex-col sm:flex-row sm:items-center gap-3 py-3">
               <div className="size-10 rounded-lg bg-muted grid place-items-center font-semibold text-xs flex-shrink-0">{it.name.slice(0, 2)}</div>
               <div className="flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="font-medium text-sm">{it.name}</span>
-                  {it.connected ? (
-                    <Badge className="bg-success text-success-foreground hover:bg-success gap-1 text-[10px] w-fit"><CheckCircle2 className="size-3" />Connected</Badge>
-                  ) : (
-                    <Badge variant="outline" className="gap-1 text-[10px] w-fit"><AlertTriangle className="size-3" />Not connected</Badge>
-                  )}
+                  <Badge className="bg-success text-success-foreground hover:bg-success gap-1 text-[10px] w-fit"><CheckCircle2 className="size-3" />Connected</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{it.desc}</p>
-                {role === "accountant" && it.connected && (
-                  <p className="text-[10px] text-muted-foreground mt-1">Last sync: {new Date(Date.now() - idx * 3600000).toLocaleString("en-ZA")}</p>
-                )}
               </div>
-              <Button
-                size="sm"
-                variant={it.connected ? "outline" : "default"}
-                className="w-full sm:w-auto"
-                onClick={() => {
-                  setIntegrations((arr) => arr.map((x) => x.name === it.name ? { ...x, connected: !x.connected } : x));
-                  toast.success(it.connected ? `${it.name} disconnected` : `${it.name} connected`);
-                }}
-              >
-                {it.connected ? "Disconnect" : "Connect"}
-              </Button>
             </div>
           ))}
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader>
