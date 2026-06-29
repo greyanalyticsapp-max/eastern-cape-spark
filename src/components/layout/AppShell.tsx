@@ -3,6 +3,7 @@ import { LayoutDashboard, Upload, Bell, Settings, LogOut, ShieldCheck, Lock, Men
 import { useState, type ReactNode } from "react";
 import { useApp } from "@/context/AppContext";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const NAV = [
