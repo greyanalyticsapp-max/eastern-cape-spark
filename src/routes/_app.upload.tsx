@@ -241,7 +241,7 @@ function UploadPage() {
             <Button
               variant="outline"
               onClick={() => {
-                if (done) navigate({ to: "/report/$id", params: { id: done.reportId } });
+                if (done) navigate({ to: "/extracted/$id", params: { id: done.reportId } });
                 setDone(null);
               }}
             >

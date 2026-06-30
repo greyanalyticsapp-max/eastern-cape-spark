@@ -9,7 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
 import { Route as ProdReadinessRouteImport } from './routes/prod-readiness'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -24,15 +26,26 @@ import { Route as AppAlertsRouteImport } from './routes/_app.alerts'
 import { Route as ApiAccountingStatusRouteImport } from './routes/api/accounting/status'
 import { Route as AppReportIdRouteImport } from './routes/_app.report.$id'
 import { Route as AppInspectionIdRouteImport } from './routes/_app.inspection.$id'
+import { Route as AppExtractedIdRouteImport } from './routes/_app.extracted.$id'
 import { Route as AppAnalysisIdRouteImport } from './routes/_app.analysis.$id'
 import { Route as ApiAccountingSyncProviderRouteImport } from './routes/api/accounting/sync.$provider'
 import { Route as ApiAccountingDisconnectProviderRouteImport } from './routes/api/accounting/disconnect.$provider'
 import { Route as ApiAccountingConnectProviderRouteImport } from './routes/api/accounting/connect.$provider'
 import { Route as ApiAccountingCallbackProviderRouteImport } from './routes/api/accounting/callback.$provider'
 
+const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
+  id: '/terms-of-service',
+  path: '/terms-of-service',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProdReadinessRoute = ProdReadinessRouteImport.update({
   id: '/prod-readiness',
   path: '/prod-readiness',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -104,6 +117,11 @@ const AppInspectionIdRoute = AppInspectionIdRouteImport.update({
   path: '/inspection/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppExtractedIdRoute = AppExtractedIdRouteImport.update({
+  id: '/extracted/$id',
+  path: '/extracted/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAnalysisIdRoute = AppAnalysisIdRouteImport.update({
   id: '/analysis/$id',
   path: '/analysis/$id',
@@ -137,7 +155,9 @@ const ApiAccountingCallbackProviderRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/prod-readiness': typeof ProdReadinessRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/alerts': typeof AppAlertsRoute
   '/dashboard': typeof AppDashboardRoute
   '/settings': typeof AppSettingsRoute
@@ -147,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/api/extract': typeof ApiExtractRoute
   '/api/report': typeof ApiReportRoute
   '/analysis/$id': typeof AppAnalysisIdRoute
+  '/extracted/$id': typeof AppExtractedIdRoute
   '/inspection/$id': typeof AppInspectionIdRoute
   '/report/$id': typeof AppReportIdRoute
   '/api/accounting/status': typeof ApiAccountingStatusRoute
@@ -158,7 +179,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/prod-readiness': typeof ProdReadinessRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/alerts': typeof AppAlertsRoute
   '/dashboard': typeof AppDashboardRoute
   '/settings': typeof AppSettingsRoute
@@ -168,6 +191,7 @@ export interface FileRoutesByTo {
   '/api/extract': typeof ApiExtractRoute
   '/api/report': typeof ApiReportRoute
   '/analysis/$id': typeof AppAnalysisIdRoute
+  '/extracted/$id': typeof AppExtractedIdRoute
   '/inspection/$id': typeof AppInspectionIdRoute
   '/report/$id': typeof AppReportIdRoute
   '/api/accounting/status': typeof ApiAccountingStatusRoute
@@ -181,7 +205,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/prod-readiness': typeof ProdReadinessRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/_app/alerts': typeof AppAlertsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -191,6 +217,7 @@ export interface FileRoutesById {
   '/api/extract': typeof ApiExtractRoute
   '/api/report': typeof ApiReportRoute
   '/_app/analysis/$id': typeof AppAnalysisIdRoute
+  '/_app/extracted/$id': typeof AppExtractedIdRoute
   '/_app/inspection/$id': typeof AppInspectionIdRoute
   '/_app/report/$id': typeof AppReportIdRoute
   '/api/accounting/status': typeof ApiAccountingStatusRoute
@@ -204,7 +231,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/privacy-policy'
     | '/prod-readiness'
+    | '/terms-of-service'
     | '/alerts'
     | '/dashboard'
     | '/settings'
@@ -214,6 +243,7 @@ export interface FileRouteTypes {
     | '/api/extract'
     | '/api/report'
     | '/analysis/$id'
+    | '/extracted/$id'
     | '/inspection/$id'
     | '/report/$id'
     | '/api/accounting/status'
@@ -225,7 +255,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/privacy-policy'
     | '/prod-readiness'
+    | '/terms-of-service'
     | '/alerts'
     | '/dashboard'
     | '/settings'
@@ -235,6 +267,7 @@ export interface FileRouteTypes {
     | '/api/extract'
     | '/api/report'
     | '/analysis/$id'
+    | '/extracted/$id'
     | '/inspection/$id'
     | '/report/$id'
     | '/api/accounting/status'
@@ -247,7 +280,9 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/login'
+    | '/privacy-policy'
     | '/prod-readiness'
+    | '/terms-of-service'
     | '/_app/alerts'
     | '/_app/dashboard'
     | '/_app/settings'
@@ -257,6 +292,7 @@ export interface FileRouteTypes {
     | '/api/extract'
     | '/api/report'
     | '/_app/analysis/$id'
+    | '/_app/extracted/$id'
     | '/_app/inspection/$id'
     | '/_app/report/$id'
     | '/api/accounting/status'
@@ -270,7 +306,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   ProdReadinessRoute: typeof ProdReadinessRoute
+  TermsOfServiceRoute: typeof TermsOfServiceRoute
   ApiAlertsRoute: typeof ApiAlertsRoute
   ApiAnalyzeRoute: typeof ApiAnalyzeRoute
   ApiExtractRoute: typeof ApiExtractRoute
@@ -284,11 +322,25 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms-of-service': {
+      id: '/terms-of-service'
+      path: '/terms-of-service'
+      fullPath: '/terms-of-service'
+      preLoaderRoute: typeof TermsOfServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/prod-readiness': {
       id: '/prod-readiness'
       path: '/prod-readiness'
       fullPath: '/prod-readiness'
       preLoaderRoute: typeof ProdReadinessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -389,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInspectionIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/extracted/$id': {
+      id: '/_app/extracted/$id'
+      path: '/extracted/$id'
+      fullPath: '/extracted/$id'
+      preLoaderRoute: typeof AppExtractedIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/analysis/$id': {
       id: '/_app/analysis/$id'
       path: '/analysis/$id'
@@ -433,6 +492,7 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppUploadRoute: typeof AppUploadRoute
   AppAnalysisIdRoute: typeof AppAnalysisIdRoute
+  AppExtractedIdRoute: typeof AppExtractedIdRoute
   AppInspectionIdRoute: typeof AppInspectionIdRoute
   AppReportIdRoute: typeof AppReportIdRoute
 }
@@ -443,6 +503,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppUploadRoute: AppUploadRoute,
   AppAnalysisIdRoute: AppAnalysisIdRoute,
+  AppExtractedIdRoute: AppExtractedIdRoute,
   AppInspectionIdRoute: AppInspectionIdRoute,
   AppReportIdRoute: AppReportIdRoute,
 }
@@ -453,7 +514,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
   ProdReadinessRoute: ProdReadinessRoute,
+  TermsOfServiceRoute: TermsOfServiceRoute,
   ApiAlertsRoute: ApiAlertsRoute,
   ApiAnalyzeRoute: ApiAnalyzeRoute,
   ApiExtractRoute: ApiExtractRoute,

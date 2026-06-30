@@ -56,6 +56,8 @@ function WelcomePage() {
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5"><ShieldCheck className="size-4 text-success" /> POPIA Compliant</span>
             <span className="flex items-center gap-1.5"><Lock className="size-4 text-success" /> Bank-Grade Security</span>
+            <Link to="/privacy-policy" className="hover:underline ml-2">Privacy Policy</Link>
+            <Link to="/terms-of-service" className="hover:underline">Terms of Service</Link>
           </div>
           <Link to="/prod-readiness" className="hover:underline">Production System Readiness Matrix</Link>
         </div>

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { ShieldCheck, Lock, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,8 @@ function LoginPage() {
         <div className="relative flex items-center gap-4 text-xs text-sidebar-foreground/70">
           <span className="flex items-center gap-1.5"><ShieldCheck className="size-3.5" /> POPIA Compliant</span>
           <span className="flex items-center gap-1.5"><Lock className="size-3.5" /> AES-256 · TLS 1.3</span>
+          <Link to="/privacy-policy" className="hover:underline ml-1">Privacy Policy</Link>
+          <Link to="/terms-of-service" className="hover:underline">Terms of Service</Link>
         </div>
       </div>
 
