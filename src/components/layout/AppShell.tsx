@@ -136,6 +136,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="flex items-center gap-1.5"><ShieldCheck className="size-3.5 text-success" /> POPIA Compliant</span>
             <span className="flex items-center gap-1.5"><Lock className="size-3.5 text-success" /> AES-256 at rest · TLS 1.3 in transit</span>
             <span>Data hosted in South Africa</span>
+            <Link to="/privacy-policy" className="hover:underline ml-2">Privacy Policy</Link>
+            <Link to="/terms-of-service" className="hover:underline">Terms of Service</Link>
             <span className="ml-auto">© {new Date().getFullYear()} Grey Analytics</span>
           </div>
         </footer>
