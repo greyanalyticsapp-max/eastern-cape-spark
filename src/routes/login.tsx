@@ -95,15 +95,7 @@ function LoginPage() {
             </div>
             <p className="text-sm text-muted-foreground mt-1">{mode === "signin" ? "Sign in to see your latest audit." : "Start finding leaks in minutes."}</p>
 
-            {/* Google sign-in (managed by Lovable Cloud broker) */}
-            <Button type="button" variant="outline" className="w-full mt-6 gap-2" onClick={onGoogle} disabled={loading}>
-              <GoogleIcon /> Continue with Google
-            </Button>
-
-            <div className="relative my-5">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">or with email</span></div>
-            </div>
+            {/* Google sign-in button disabled */}
 
             <form onSubmit={submit} className="space-y-4">
               {mode === "signup" && (
