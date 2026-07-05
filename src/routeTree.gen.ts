@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
 import { Route as ProdReadinessRouteImport } from './routes/prod-readiness'
+import { Route as ProdRouteImport } from './routes/prod'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
@@ -41,6 +42,11 @@ const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
 const ProdReadinessRoute = ProdReadinessRouteImport.update({
   id: '/prod-readiness',
   path: '/prod-readiness',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProdRoute = ProdRouteImport.update({
+  id: '/prod',
+  path: '/prod',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/prod': typeof ProdRoute
   '/prod-readiness': typeof ProdReadinessRoute
   '/terms-of-service': typeof TermsOfServiceRoute
   '/alerts': typeof AppAlertsRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/prod': typeof ProdRoute
   '/prod-readiness': typeof ProdReadinessRoute
   '/terms-of-service': typeof TermsOfServiceRoute
   '/alerts': typeof AppAlertsRoute
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/prod': typeof ProdRoute
   '/prod-readiness': typeof ProdReadinessRoute
   '/terms-of-service': typeof TermsOfServiceRoute
   '/_app/alerts': typeof AppAlertsRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/privacy-policy'
+    | '/prod'
     | '/prod-readiness'
     | '/terms-of-service'
     | '/alerts'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/privacy-policy'
+    | '/prod'
     | '/prod-readiness'
     | '/terms-of-service'
     | '/alerts'
@@ -281,6 +292,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/privacy-policy'
+    | '/prod'
     | '/prod-readiness'
     | '/terms-of-service'
     | '/_app/alerts'
@@ -307,6 +319,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  ProdRoute: typeof ProdRoute
   ProdReadinessRoute: typeof ProdReadinessRoute
   TermsOfServiceRoute: typeof TermsOfServiceRoute
   ApiAlertsRoute: typeof ApiAlertsRoute
@@ -334,6 +347,13 @@ declare module '@tanstack/react-router' {
       path: '/prod-readiness'
       fullPath: '/prod-readiness'
       preLoaderRoute: typeof ProdReadinessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prod': {
+      id: '/prod'
+      path: '/prod'
+      fullPath: '/prod'
+      preLoaderRoute: typeof ProdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy-policy': {
@@ -515,6 +535,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
+  ProdRoute: ProdRoute,
   ProdReadinessRoute: ProdReadinessRoute,
   TermsOfServiceRoute: TermsOfServiceRoute,
   ApiAlertsRoute: ApiAlertsRoute,
