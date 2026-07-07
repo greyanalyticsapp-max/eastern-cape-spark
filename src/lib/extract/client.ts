@@ -11,6 +11,7 @@
 
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
+import { bearerHeaders } from "@/lib/api/bearer";
 
 export const MIN_CHARS = 10;
 
@@ -92,7 +93,7 @@ export async function extractServerSide(file: File): Promise<ExtractResult> {
   const fd = new FormData();
   fd.append("file", file, file.name);
   try {
-    const res = await fetch("/api/extract", { method: "POST", body: fd });
+    const res = await fetch("/api/extract", { method: "POST", body: fd, headers: await bearerHeaders() });
     const json = (await res.json()) as { success: boolean; text?: string; error?: string };
     if (json.success && json.text && json.text.trim().length >= MIN_CHARS) {
       return { ok: true, text: json.text };
