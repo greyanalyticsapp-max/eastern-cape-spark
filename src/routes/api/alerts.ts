@@ -13,6 +13,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { sendWhatsApp } from "@/services/twilioService";
 import { sendEmail } from "@/services/resendService";
 import type { AlertChannelResult, AlertRequestPayload, AlertResponse } from "@/lib/alerts/types";
+import { requireBearer } from "@/lib/api/auth-helpers.server";
 
 const AMOUNT_THRESHOLD = 2000;
 
@@ -54,6 +55,8 @@ export const Route = createFileRoute("/api/alerts")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const auth = await requireBearer(request);
+        if (!auth.ok) return auth.response;
         let payload: AlertRequestPayload;
         try { payload = (await request.json()) as AlertRequestPayload; }
         catch { return json({ success: false, error: "Invalid JSON" }, 400); }
