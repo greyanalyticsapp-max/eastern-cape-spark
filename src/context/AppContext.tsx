@@ -3,6 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { mockAlerts, mockReport, mockUploads, type Alert, type MockUser, type Report, type Role, type Upload } from "@/lib/mock";
 import type { AgentId, AgentResult } from "@/lib/analysis/types";
+import {
+  loadAlerts, loadReports, loadUploads,
+  markAlertReadRemote, saveAlerts, saveReport, saveUpload,
+} from "@/lib/persistence";
 
 // ============================================================================
 // AppContext — wired to real Lovable Cloud (Supabase) auth.
@@ -97,7 +101,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setTimeout(() => {
           hydrateProfile(session.user.id, session.user.email ?? "").then(() => {
             if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
-              // No mock data seed per strict instructions
+              // Hydrate persisted state from Supabase.
+              Promise.all([loadUploads(), loadReports(), loadAlerts()]).then(([u, r, a]) => {
+                setUploads(u);
+                setReports(r);
+                setAlerts(a);
+              }).catch(() => { /* stay empty; RLS or offline */ });
             }
           });
         }, 0);
@@ -160,13 +169,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     logout: async () => { await supabase.auth.signOut(); },
     uploadLimit, setUploadLimit: setUploadLimitState,
-    uploads, addUpload: (u) => setUploads((prev) => [u, ...prev]),
+    uploads,
+    addUpload: (u) => { setUploads((prev) => [u, ...prev]); void saveUpload(u); },
     reports,
-    addReport: (r) => { setReports((prev) => [r, ...prev]); return r; },
+    addReport: (r) => { setReports((prev) => [r, ...prev]); void saveReport(r); return r; },
     getReport: (id) => reports.find((r) => r.id === id) ?? reports[0],
     alerts,
-    addAlertsFromReport: (r) => setAlerts((prev) => [...mockAlerts(r.leaks), ...prev]),
-    markAlertRead: (id) => setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, read: true } : a))),
+    addAlertsFromReport: (r) => {
+      const fresh = mockAlerts(r.leaks);
+      setAlerts((prev) => [...fresh, ...prev]);
+      void saveAlerts(fresh);
+    },
+    markAlertRead: (id) => {
+      setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, read: true } : a)));
+      void markAlertReadRemote(id);
+    },
     extractedTexts,
     setExtractedText: (reportId, text) => setExtractedTexts((prev) => ({ ...prev, [reportId]: text })),
     analyses,
