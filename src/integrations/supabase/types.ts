@@ -53,6 +53,97 @@ export type Database = {
         }
         Relationships: []
       }
+      alert_deliveries: {
+        Row: {
+          alert_id: string
+          channel: string
+          error: string | null
+          id: string
+          provider_id: string | null
+          sent_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          alert_id: string
+          channel: string
+          error?: string | null
+          id?: string
+          provider_id?: string | null
+          sent_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          alert_id?: string
+          channel?: string
+          error?: string | null
+          id?: string
+          provider_id?: string | null
+          sent_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_deliveries_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alerts: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          leak_id: string | null
+          leak_type: string
+          message: string
+          read: boolean
+          report_id: string | null
+          severity: string
+          thread: Json
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          leak_id?: string | null
+          leak_type: string
+          message: string
+          read?: boolean
+          report_id?: string | null
+          severity?: string
+          thread?: Json
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          leak_id?: string | null
+          leak_type?: string
+          message?: string
+          read?: boolean
+          report_id?: string | null
+          severity?: string
+          thread?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           business_name: string | null
@@ -80,6 +171,66 @@ export type Database = {
           name?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          business_name: string
+          created_at: string
+          id: string
+          payload: Json
+          title: string
+          user_id: string
+        }
+        Insert: {
+          business_name: string
+          created_at?: string
+          id?: string
+          payload: Json
+          title?: string
+          user_id: string
+        }
+        Update: {
+          business_name?: string
+          created_at?: string
+          id?: string
+          payload?: Json
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      uploads: {
+        Row: {
+          created_at: string
+          extracted_text: string | null
+          file_name: string
+          id: string
+          size: string | null
+          source: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extracted_text?: string | null
+          file_name: string
+          id?: string
+          size?: string | null
+          source?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          extracted_text?: string | null
+          file_name?: string
+          id?: string
+          size?: string | null
+          source?: string | null
+          status?: string
+          user_id?: string
         }
         Relationships: []
       }
