@@ -4,6 +4,7 @@
 import type { AgentResult, Anomaly } from "@/lib/analysis/types";
 import type { AlertRequestPayload, AlertResponse, SentAlert } from "./types";
 import { appendSentAlerts, updateSentAlert } from "./storage";
+import { bearerHeaders } from "@/lib/api/bearer";
 
 /**
  * Extract a ZAR amount from an anomaly's free-form text. Looks at
@@ -85,7 +86,7 @@ export async function triggerAlerts(args: TriggerAlertsArgs): Promise<TriggerAle
   try {
     const res = await fetch("/api/alerts", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(await bearerHeaders()) },
       body: JSON.stringify(payload),
     });
     const data = (await res.json()) as AlertResponse;
@@ -161,7 +162,7 @@ export async function retrySingleAlert(row: SentAlert): Promise<SentAlert> {
   try {
     const res = await fetch("/api/alerts", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(await bearerHeaders()) },
       body: JSON.stringify(payload),
     });
     const data = (await res.json()) as AlertResponse;
