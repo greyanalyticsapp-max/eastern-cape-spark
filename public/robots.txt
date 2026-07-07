@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /$
+Allow: /login
+Allow: /forgot-password
+Allow: /reset-password
+Allow: /privacy-policy
+Allow: /terms-of-service
+Allow: /prod
+Allow: /prod-readiness
+Disallow: /dashboard
+Disallow: /upload
+Disallow: /analysis/
+Disallow: /report/
+Disallow: /inspection/
+Disallow: /extracted/
+Disallow: /alerts
+Disallow: /settings
+Disallow: /api/
+
+Sitemap: https://eastern-cape-spark.lovable.app/sitemap.xml

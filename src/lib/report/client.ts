@@ -1,6 +1,7 @@
 // Browser-side helper to call the narrative-writer server route.
 import type { AgentId, AgentResult } from "@/lib/analysis/types";
 import type { ReportPageNarrative } from "./types";
+import { bearerHeaders } from "@/lib/api/bearer";
 
 interface ComposeResponse {
   success: boolean;
@@ -14,9 +15,10 @@ export async function composeNarrative(
   analyses: Partial<Record<AgentId, AgentResult>>,
   signal?: AbortSignal,
 ): Promise<{ pages: ReportPageNarrative[]; mocked: boolean }> {
+  const auth = await bearerHeaders();
   const res = await fetch("/api/report", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...auth },
     body: JSON.stringify({ businessName, analyses }),
     signal,
   });

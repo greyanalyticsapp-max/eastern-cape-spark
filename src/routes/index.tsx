@@ -4,7 +4,19 @@ import { Button } from "@/components/ui/button";
 import { ShieldCheck, Lock, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 
-export const Route = createFileRoute("/")({ component: WelcomePage });
+export const Route = createFileRoute("/")({
+  head: () => ({ meta: [
+    { title: "Grey Analytics — AI financial audits for South African SMMEs" },
+    { name: "description", content: "Four AI agents scan your Xero, Sage, QuickBooks and bank statements to find money leaks. Plain-English audit reports and WhatsApp alerts in under 48 hours." },
+    { property: "og:title", content: "Grey Analytics — AI financial audits for South African SMMEs" },
+    { property: "og:description", content: "Four AI agents scan your Xero, Sage, QuickBooks and bank statements to find money leaks. Plain-English audit reports and WhatsApp alerts in under 48 hours." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: "Grey Analytics — AI financial audits for South African SMMEs" },
+    { name: "twitter:description", content: "Find money leaks fast with four dedicated AI audit agents. Built for Eastern Cape SMMEs." },
+  ]}),
+  component: WelcomePage,
+});
 
 function WelcomePage() {
   const { user } = useApp();

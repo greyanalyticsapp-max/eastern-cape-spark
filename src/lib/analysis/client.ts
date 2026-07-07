@@ -2,6 +2,7 @@
 // The UI runs four of these in parallel and tracks per-agent status.
 
 import type { AgentId, AgentResult } from "./types";
+import { bearerHeaders } from "@/lib/api/bearer";
 
 export interface AnalyzeResponse {
   success: boolean;
@@ -15,9 +16,10 @@ export interface AnalyzeResponse {
 }
 
 export async function runAgent(agent: AgentId, text: string, signal?: AbortSignal): Promise<AgentResult> {
+  const auth = await bearerHeaders();
   const res = await fetch("/api/analyze", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...auth },
     body: JSON.stringify({ agent, text }),
     signal,
   });

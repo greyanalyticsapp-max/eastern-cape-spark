@@ -10,10 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProdReadinessRouteImport } from './routes/prod-readiness'
 import { Route as ProdRouteImport } from './routes/prod'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiReportRouteImport } from './routes/api/report'
@@ -39,6 +41,11 @@ const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
   path: '/terms-of-service',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProdReadinessRoute = ProdReadinessRouteImport.update({
   id: '/prod-readiness',
   path: '/prod-readiness',
@@ -57,6 +64,11 @@ const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -160,10 +172,12 @@ const ApiAccountingCallbackProviderRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/prod': typeof ProdRoute
   '/prod-readiness': typeof ProdReadinessRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/terms-of-service': typeof TermsOfServiceRoute
   '/alerts': typeof AppAlertsRoute
   '/dashboard': typeof AppDashboardRoute
@@ -185,10 +199,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/prod': typeof ProdRoute
   '/prod-readiness': typeof ProdReadinessRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/terms-of-service': typeof TermsOfServiceRoute
   '/alerts': typeof AppAlertsRoute
   '/dashboard': typeof AppDashboardRoute
@@ -212,10 +228,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/prod': typeof ProdRoute
   '/prod-readiness': typeof ProdReadinessRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/terms-of-service': typeof TermsOfServiceRoute
   '/_app/alerts': typeof AppAlertsRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -239,10 +257,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/forgot-password'
     | '/login'
     | '/privacy-policy'
     | '/prod'
     | '/prod-readiness'
+    | '/reset-password'
     | '/terms-of-service'
     | '/alerts'
     | '/dashboard'
@@ -264,10 +284,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/forgot-password'
     | '/login'
     | '/privacy-policy'
     | '/prod'
     | '/prod-readiness'
+    | '/reset-password'
     | '/terms-of-service'
     | '/alerts'
     | '/dashboard'
@@ -290,10 +312,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_app'
+    | '/forgot-password'
     | '/login'
     | '/privacy-policy'
     | '/prod'
     | '/prod-readiness'
+    | '/reset-password'
     | '/terms-of-service'
     | '/_app/alerts'
     | '/_app/dashboard'
@@ -317,10 +341,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   ProdRoute: typeof ProdRoute
   ProdReadinessRoute: typeof ProdReadinessRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   TermsOfServiceRoute: typeof TermsOfServiceRoute
   ApiAlertsRoute: typeof ApiAlertsRoute
   ApiAnalyzeRoute: typeof ApiAnalyzeRoute
@@ -340,6 +366,13 @@ declare module '@tanstack/react-router' {
       path: '/terms-of-service'
       fullPath: '/terms-of-service'
       preLoaderRoute: typeof TermsOfServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/prod-readiness': {
@@ -368,6 +401,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -533,10 +573,12 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   ProdRoute: ProdRoute,
   ProdReadinessRoute: ProdReadinessRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   TermsOfServiceRoute: TermsOfServiceRoute,
   ApiAlertsRoute: ApiAlertsRoute,
   ApiAnalyzeRoute: ApiAnalyzeRoute,
