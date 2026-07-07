@@ -2,6 +2,7 @@
 // (RLS enforces user_id on every row). Safe to call while unauthenticated —
 // helpers no-op until a session exists.
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { Alert, Report, Upload } from "@/lib/mock";
 
 async function currentUserId(): Promise<string | null> {
@@ -52,7 +53,7 @@ export async function saveReport(r: Report): Promise<void> {
     user_id: userId,
     business_name: r.businessName,
     title: r.title,
-    payload: r as unknown as Record<string, unknown>,
+    payload: JSON.parse(JSON.stringify(r)) as Json,
     created_at: new Date(r.generatedAt).toISOString(),
   }, { onConflict: "id" });
 }
@@ -85,7 +86,7 @@ export async function saveAlerts(alerts: Alert[]): Promise<void> {
       message: a.message,
       severity: "medium",
       read: a.read,
-      thread: a.thread as unknown as Record<string, unknown>[],
+      thread: JSON.parse(JSON.stringify(a.thread)) as Json,
       created_at: new Date(a.timestamp).toISOString(),
     })),
   );
